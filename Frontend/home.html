@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Home | User Dashboard</title>
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    /* Additional dashboard styles */
+    body {
+      background: linear-gradient(135deg, #74ABE2, #5563DE);
+      transition: background 0.5s ease;
+    }
+
+    body.dark {
+      background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+      color: #f0f0f0;
+    }
+
+    .dashboard {
+      max-width: 450px;
+      margin: auto;
+      background: white;
+      border-radius: 20px;
+      padding: 30px;
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+      text-align: center;
+      margin-top: 80px;
+      transition: all 0.4s ease;
+    }
+
+    body.dark .dashboard {
+      background: #2b2b2b;
+      color: #eee;
+      box-shadow: 0 8px 25px rgba(255, 255, 255, 0.1);
+    }
+
+    h2 {
+      font-size: 24px;
+      margin-bottom: 10px;
+      color: #333;
+    }
+
+    #welcomeMsg {
+      margin-top: 10px;
+      font-size: 18px;
+      font-weight: 500;
+      animation: fadeIn 0.8s ease-in-out;
+    }
+
+    .profile-info {
+      margin-top: 20px;
+      font-size: 16px;
+      line-height: 1.6;
+    }
+
+    #clock {
+      font-size: 20px;
+      font-weight: bold;
+      margin-top: 15px;
+    }
+
+    #logoutBtn, #themeBtn {
+      margin-top: 25px;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 12px;
+      color: white;
+      background: #3498db;
+      cursor: pointer;
+      transition: 0.3s;
+      font-size: 15px;
+    }
+
+    #logoutBtn:hover, #themeBtn:hover {
+      background: #2980b9;
+    }
+
+    #themeBtn {
+      background: #f39c12;
+      margin-right: 10px;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+  <div class="dashboard">
+    <h2 id="welcomeTitle">Welcome to Your Dashboard</h2>
+    <p id="welcomeMsg">Loading your profile...</p>
+
+    <div class="profile-info" id="profileInfo" style="display:none;">
+      <p><strong>Username:</strong> <span id="username"></span></p>
+      <p><strong>Email:</strong> <span id="email"></span></p>
+    </div>
+
+    <div id="clock">🕒 Loading time...</div>
+
+    <div style="margin-top: 30px;">
+      <button id="themeBtn">🌗 Toggle Theme</button>
+      <button id="logoutBtn">🚪 Logout</button>
+    </div>
+  </div>
+
+  <script>
+    // Load user profile
+    async function loadProfile() {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        alert('You are not logged in!');
+        window.location.href = 'index.html';
+        return;
+      }
+
+      try {
+        const res = await fetch('http://localhost:4000/profile', {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const data = await res.json();
+
+        if (res.ok && data.user) {
+          document.getElementById('welcomeMsg').textContent =
+            `👋 Hello, ${data.user.username}! Glad to see you again.`;
+          document.getElementById('username').textContent = data.user.username;
+          document.getElementById('email').textContent = data.user.email;
+          document.getElementById('profileInfo').style.display = 'block';
+        } else {
+          alert('Session expired. Please login again.');
+          localStorage.removeItem('token');
+          window.location.href = 'index.html';
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    // Digital Clock
+    function updateClock() {
+      const now = new Date();
+      const time = now.toLocaleTimeString();
+      document.getElementById('clock').textContent = `🕒 ${time}`;
+    }
+    setInterval(updateClock, 1000);
+    updateClock();
+
+    // Theme Toggle
+    const themeBtn = document.getElementById('themeBtn');
+    themeBtn.addEventListener('click', () => {
+      document.body.classList.toggle('dark');
+      themeBtn.textContent = document.body.classList.contains('dark')
+        ? '☀️ Light Mode'
+        : '🌗 Dark Mode';
+    });
+
+    // Logout
+    document.getElementById('logoutBtn').addEventListener('click', () => {
+      localStorage.removeItem('token');
+      window.location.href = 'index.html';
+    });
+
+    // Run
+    loadProfile();
+  </script>
+</body>
+</html>
