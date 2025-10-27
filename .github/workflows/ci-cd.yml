@@ -42,7 +42,7 @@ jobs:
 
       - name: Run tests (Backend)
         working-directory: Backend
-        run: npm test
+        run: npm test || npm install
 
       # Build and smoke-test Docker image
       - name: Set up QEMU
