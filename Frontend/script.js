@@ -4,6 +4,7 @@ const submitBtn = document.getElementById('submitBtn');
 const message = document.getElementById('message');
 let isLogin = false;
 
+// Toggle between Login and Signup forms
 toggleLink.addEventListener('click', (e) => {
   e.preventDefault();
   isLogin = !isLogin;
@@ -14,6 +15,7 @@ toggleLink.addEventListener('click', (e) => {
     : 'Already have an account? Login here';
 });
 
+// Handle form submission
 submitBtn.addEventListener('click', async () => {
   const username = document.getElementById('username').value;
   const email = document.getElementById('email').value;
@@ -33,16 +35,16 @@ submitBtn.addEventListener('click', async () => {
     message.textContent = data.message;
 
     if (res.ok && isLogin && data.token) {
+      // Save token and redirect to home.html
       localStorage.setItem('token', data.token);
       message.style.color = 'green';
-      // Redirect to home.html
-      setTimeout(() => {
-        window.location.href = 'home.html';
-      }, 1000);
+      window.location.href = 'home.html'; // Redirect to dashboard
     } else {
       message.style.color = 'red';
     }
   } catch (err) {
     console.error(err);
+    message.textContent = 'Something went wrong. Try again later.';
+    message.style.color = 'red';
   }
 });
