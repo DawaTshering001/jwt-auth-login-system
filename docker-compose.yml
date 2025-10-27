@@ -1,0 +1,49 @@
+# docker-compose.yml
+# - Spins up backend service and optional nginx-based static frontend
+# - Supports environment variables via .env or host env
+# - Mounts a volume for SQLite DB persistence
+
+version: "3.8"
+
+services:
+  backend:
+    build:
+      context: ./Backend
+      dockerfile: Dockerfile
+    ports:
+      - "4000:4000"
+    environment:
+      # Use an env-file or host-level env to override these
+      - NODE_ENV=${NODE_ENV:-development}
+      - JWT_SECRET=${JWT_SECRET}
+      - DB_PATH=${DB_PATH:-/data/database.sqlite}
+      - PORT=4000
+    volumes:
+      # Mount code for local development (optional); remove for pure prod
+      - ./Backend:/app:cached
+      # Persist database file
+      - db_data:/data
+    # Set restart policy for convenience
+    restart: unless-stopped
+
+  # Optional: Serve frontend statically with nginx
+  frontend:
+    image: nginx:alpine
+    ports:
+      - "8080:80"
+    volumes:
+      # Mount the static frontend files into nginx html dir (read-only)
+      - ./Frontend:/usr/share/nginx/html:ro
+    restart: unless-stopped
+    depends_on:
+      - backend
+
+volumes:
+  db_data:
+    # Use default settings; change to a host path if you want explicit control
+    driver: local
+
+# Usage:
+# 1. Create a .env file with JWT_SECRET and DB_PATH (optional)
+# 2. docker-compose up --build
+# The backend will be available at http://localhost:4000 and frontend at http://localhost:8080

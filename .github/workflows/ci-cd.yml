@@ -1,0 +1,93 @@
+# .github/workflows/ci.yml
+# CI pipeline for Node 18 backend and Docker image build+smoke-test
+# Runs on push and pull_request to main branch
+
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Test and build image
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Use Node.js 18
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - name: Cache npm
+        uses: actions/cache@v4
+        with:
+          # npm cache directory
+          path: ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('Backend/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
+      - name: Install dependencies (Backend)
+        working-directory: Backend
+        run: npm ci
+
+      - name: Run tests (Backend)
+        working-directory: Backend
+        run: npm test
+
+      # Build and smoke-test Docker image
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Build Docker image (Backend)
+        uses: docker/build-push-action@v4
+        with:
+          context: Backend
+          file: Backend/Dockerfile
+          platforms: linux/amd64
+          push: false
+          tags: jwt-auth-login-system-backend:ci-${{ github.sha }}
+
+      - name: Run container smoke test
+        run: |
+          # Run container with minimal env required; expose to a different host port to avoid conflicts
+          docker run --rm -d --name jwt-test -e JWT_SECRET=ci-secret -e DB_PATH=/tmp/db.sqlite -p 4001:4000 jwt-auth-login-system-backend:ci-${{ github.sha }}
+          # Wait for a few seconds for the service to start (adjust as needed)
+          for i in $(seq 1 15); do
+            if curl -sS --fail http://localhost:4001/; then
+              echo "Service responded"; break
+            fi
+            echo "Waiting for service... ($i)";
+            sleep 2
+          done
+          # Show container status for debugging
+          docker ps -a
+          # Stop container (docker run --rm will cleanup but ensure it's stopped)
+          docker stop jwt-test || true
+
+  deploy:
+    name: Deploy (placeholder)
+    needs: test
+    if: github.ref == 'refs/heads/main' && needs.test.result == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deployment placeholder
+        run: |
+          echo "Tests passed. Add deployment steps here (e.g., build & push image, deploy to Render/Railway/Vercel)."
+
+# Notes:
+# - This workflow assumes the Backend/package.json defines a "test" script.
+# - The smoke test hits the root path (/). If your server exposes a health endpoint (e.g. /health), update the curl URL.
+# - For production deployments, add a secure step to push images to a registry and deploy with proper secrets.

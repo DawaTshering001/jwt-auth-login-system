@@ -1,0 +1,20 @@
+# Ignore node_modules (we install in image)
+node_modules
+
+# Ignore local development files and secrets
+.env
+.env.*
+*.log
+npm-debug.log
+.DS_Store
+.vscode
+
+# Git metadata
+.git
+
+# Exclude frontend (not needed by backend image build) to keep context small
+../Frontend
+Frontend
+
+# Ignore README and other docs to keep build lean
+*.md
