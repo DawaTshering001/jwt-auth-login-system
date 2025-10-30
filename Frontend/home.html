@@ -2,13 +2,16 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Home | User Dashboard</title>
+  <title>Event Management Dashboard</title>
   <link rel="stylesheet" href="style.css" />
   <style>
-    /* Additional dashboard styles */
+    /* Global styles */
     body {
+      font-family: Arial, sans-serif;
+      margin: 0;
       background: linear-gradient(135deg, #74ABE2, #5563DE);
       transition: background 0.5s ease;
+      color: #333;
     }
 
     body.dark {
@@ -17,14 +20,12 @@
     }
 
     .dashboard {
-      max-width: 450px;
-      margin: auto;
+      max-width: 800px;
+      margin: 50px auto;
       background: white;
       border-radius: 20px;
       padding: 30px;
       box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
-      text-align: center;
-      margin-top: 80px;
       transition: all 0.4s ease;
     }
 
@@ -37,7 +38,6 @@
     h2 {
       font-size: 24px;
       margin-bottom: 10px;
-      color: #333;
     }
 
     #welcomeMsg {
@@ -47,10 +47,61 @@
       animation: fadeIn 0.8s ease-in-out;
     }
 
-    .profile-info {
+    .profile-info, .event-form, .event-list {
       margin-top: 20px;
-      font-size: 16px;
-      line-height: 1.6;
+    }
+
+    .event-form input, .event-form textarea {
+      width: 100%;
+      padding: 10px;
+      margin: 6px 0;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      box-sizing: border-box;
+    }
+
+    .event-form button {
+      margin-top: 10px;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 12px;
+      color: white;
+      background: #27ae60;
+      cursor: pointer;
+      transition: 0.3s;
+      font-size: 15px;
+    }
+
+    .event-form button:hover {
+      background: #1e8449;
+    }
+
+    .event-item {
+      background: #f1f1f1;
+      padding: 15px;
+      margin-bottom: 10px;
+      border-radius: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      transition: 0.3s;
+    }
+
+    body.dark .event-item {
+      background: #3a3a3a;
+    }
+
+    .deleteBtn {
+      background: #e74c3c;
+      border: none;
+      padding: 5px 12px;
+      border-radius: 8px;
+      color: white;
+      cursor: pointer;
+    }
+
+    .deleteBtn:hover {
+      background: #c0392b;
     }
 
     #clock {
@@ -65,20 +116,22 @@
       border: none;
       border-radius: 12px;
       color: white;
-      background: #3498db;
       cursor: pointer;
-      transition: 0.3s;
       font-size: 15px;
-    }
-
-    #logoutBtn:hover, #themeBtn:hover {
-      background: #2980b9;
+      transition: 0.3s;
     }
 
     #themeBtn {
       background: #f39c12;
       margin-right: 10px;
     }
+
+    #logoutBtn {
+      background: #3498db;
+    }
+
+    #themeBtn:hover { background: #d68910; }
+    #logoutBtn:hover { background: #2980b9; }
 
     @keyframes fadeIn {
       from { opacity: 0; transform: translateY(10px); }
@@ -88,7 +141,7 @@
 </head>
 <body>
   <div class="dashboard">
-    <h2 id="welcomeTitle">Welcome to Your Dashboard</h2>
+    <h2 id="welcomeTitle">Welcome to Your Event Dashboard</h2>
     <p id="welcomeMsg">Loading your profile...</p>
 
     <div class="profile-info" id="profileInfo" style="display:none;">
@@ -97,6 +150,21 @@
     </div>
 
     <div id="clock">🕒 Loading time...</div>
+
+    <!-- Event Form -->
+    <div class="event-form">
+      <h3>Create New Event</h3>
+      <input type="text" id="eventTitle" placeholder="Event Title" />
+      <textarea id="eventDesc" placeholder="Event Description"></textarea>
+      <input type="date" id="eventDate" />
+      <button id="addEventBtn">➕ Add Event</button>
+    </div>
+
+    <!-- Event List -->
+    <div class="event-list" id="eventList">
+      <h3>Your Events</h3>
+      <div id="eventsContainer"></div>
+    </div>
 
     <div style="margin-top: 30px;">
       <button id="themeBtn">🌗 Toggle Theme</button>
@@ -160,8 +228,61 @@
       window.location.href = 'index.html';
     });
 
-    // Run
+    // Event Management
+    let events = JSON.parse(localStorage.getItem('events') || '[]');
+
+    function renderEvents() {
+      const container = document.getElementById('eventsContainer');
+      container.innerHTML = '';
+      if(events.length === 0){
+        container.innerHTML = "<p>No events yet!</p>";
+      }
+      events.forEach((event, idx) => {
+        const div = document.createElement('div');
+        div.className = 'event-item';
+        div.innerHTML = `
+          <div>
+            <strong>${event.title}</strong> <br />
+            ${event.desc} <br />
+            <small>${event.date}</small>
+          </div>
+          <button class="deleteBtn" onclick="deleteEvent(${idx})">🗑 Delete</button>
+        `;
+        container.appendChild(div);
+      });
+    }
+
+    function addEvent() {
+      const title = document.getElementById('eventTitle').value.trim();
+      const desc = document.getElementById('eventDesc').value.trim();
+      const date = document.getElementById('eventDate').value;
+
+      if(!title || !desc || !date){
+        alert('Please fill all fields!');
+        return;
+      }
+
+      events.push({ title, desc, date });
+      localStorage.setItem('events', JSON.stringify(events));
+      document.getElementById('eventTitle').value = '';
+      document.getElementById('eventDesc').value = '';
+      document.getElementById('eventDate').value = '';
+      renderEvents();
+    }
+
+    function deleteEvent(idx){
+      if(confirm('Are you sure to delete this event?')){
+        events.splice(idx, 1);
+        localStorage.setItem('events', JSON.stringify(events));
+        renderEvents();
+      }
+    }
+
+    document.getElementById('addEventBtn').addEventListener('click', addEvent);
+
+    // Initialize
     loadProfile();
+    renderEvents();
   </script>
 </body>
 </html>
