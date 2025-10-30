@@ -1,5 +1,6 @@
+// test/example.test.js
 const request = require('supertest');
-const app = require('../server');
+const app = require('.../app');
 
 describe('Basic server tests', () => {
   it('should return 200 on root path', async () => {
